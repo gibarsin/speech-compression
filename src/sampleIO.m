@@ -1,4 +1,4 @@
-function sample = readSample(sampleType, sampleNumber)
+function sample = readSample(sampleNumber, sampleType = "")
 	persistent sampleFolder = "./samples/";
 	persistent sampleName = ["sample" sampleType];
 	persistent sampleFormat = ".wav";
