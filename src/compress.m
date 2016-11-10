@@ -7,14 +7,23 @@ function compress(sample, epsilon, L)
 
 	% Save only half + 1 coefficients, the rest can be discarded
 	% because they are repeated.
-	% uniqueCoefficients = unique(coefficients); % octave's fft returns unique values
+	uniqueCoefficients = unique(coefficients); % octave's fft returns unique values
 
 	% Threshold and quantization
 	uniqueCoefficients = threshold(coefficients, epsilon);
-	[coefficientsTable quantizationTable] = quantize(uniqueCoefficients, L);
+
+	% Coefficients in their real part and complex part
+	% so the minimum and maximum values can be calculated
+	realPartCoefficients = real(coefficients);
+	imaginaryPartCoefficients = imag(coefficients);
+	realQuantizationTable = quantize(realPartCoefficients, L);
+	imaginaryQuantizationTable = quantize(imaginaryPartCoefficients, L);
+
+	quantizationTable = [realQuantizationTable imaginaryQuantizationTable];
 
 	% Huffman encoding
-	compressedSize = huffmanEncoding(coefficients, uniqueCoefficients, quantizationTable, L)
+	huffmanEncoding([real(coefficients) imag(coefficients)], L);
+	compressedSize = huffmanEncoding(quantizationTable, L)
 end
 
 function coefficients = threshold(coefficients, epsilon)
@@ -27,37 +36,26 @@ end
 
 % coefficientsTable are the real and imaginary parts of the coefficients divided in two columns respectively
 % quantizationTable are the real and imaginary parts of the quantized coefficients
-function [coefficientsTable quantizationTable] = quantize(coefficients, L)
-	% Coefficients in their real part and complex part
-	% so the minimum and maximum values can be calculated
-	realPartCoefficients = real(coefficients);
-	imaginaryPartCoefficients = imag(coefficients);
+function quantizationTable = quantize(coefficients, L)
+	% Get the (min max) bounds of the coefficients
+	minFrequency = min(coefficients);
+	maxFrequency = max(coefficients);
 
-	% Get the (min max) bounds of the real and imaginary parts
-	% of the coefficients
-	realBounds = [min(realPartCoefficients) max(realPartCoefficients)];
-	imaginaryBounds = [min(imaginaryPartCoefficients) max(imaginaryPartCoefficients)];
-
-	% Get the steps to build the quantization table
-	realStep = calculateStep(realBounds, L);
-	imaginaryStep = calculateStep(imaginaryBounds, L);
-
-	realQuantizationTable = [realBounds(1):realStep:realBounds(2)];
-	imaginaryQuantizationTable = [imaginaryBounds(1):imaginaryStep:imaginaryBounds(2)];
-
-	coefficientsTable = [realPartCoefficients imaginaryPartCoefficients];
-	quantizationTable = [realQuantizationTable imaginaryQuantizationTable];
+	% Get the step to build the quantization table
+	step = calculateStep(minFrequency, maxFrequency, L);
+	quantizationIndex =  floor((coefficients - minFrequency) / step);
+	quantizationTable = quantizationIndex * step + step/2 + minFrequency;
 end
 
-function compressedSize = huffmanEncoding(quantizationTable, L)
-	uniqueCoefficients = unique(quantizationTable);
+function compressedSize = huffmanEncoding(coefficients, L)
+	uniqueCoefficients = unique(coefficients);
 
-	% Calculate the coefficients probability of occurrence in the sample
-	coefficientsFrequency = hist(quantizationTable, uniqueCoefficients);
+	% Calculate the coefficients relative frequency of occurrence in the sample
+	coefficientsFrequency = hist(coefficients, uniqueCoefficients);
 	totalFrequency = sum(coefficientsFrequency);
-	coeffRelativeFrequency = coefficientsFrequency/totalFrequency;
+	coeffRelativeFrequency = coefficientsFrequency./totalFrequency;
 
-	sampleDictionary = huffmandict(quantizationTable, coeffRelativeFrequency);
+	sampleDictionary = huffmandict(coefficients, coeffRelativeFrequency);
 
 	% Calculate the size of the compressed file (we don't need the file to
 	% determine its size)
@@ -85,8 +83,9 @@ end
 
 
 
+
 % Calculate the step in the Quantization process
 % The bounds are assumed to be recieved in the order: min and max
-function step = calculateStep(bounds, L)
-	step = (bounds(2) - bounds(1))/L;
+function step = calculateStep(minFrequency, maxFrequency, L)
+	step = (maxFrequency - minFrequency)/L;
 end
