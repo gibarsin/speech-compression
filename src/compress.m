@@ -1,16 +1,17 @@
 % sample is the file to compress
 % epsilon is the upper bound from which the numbers below will be truncated to zero
-% L is the number of bits used in the 'cuantification process'
-function compress(sample, epsilon, L)
+% L is the number of bits used in the 'quantization process'
+function recoveredFile = compress(sample, epsilon, L)
 	% Transform methods
 	coefficients = fft(sample); % Return FFT coefficients, function is from Octave
 
 	% Save only half + 1 coefficients, the rest can be discarded
 	% because they are repeated.
-	uniqueCoefficients = unique(coefficients); % octave's fft returns unique values
+	N = length(coefficients);
+	coefficients = coefficients(1:floor(N/2) + 1);
 
-	% Threshold
-	uniqueCoefficients = threshold(coefficients, epsilon);
+	% Threshold values below epsilon
+	coefficients = threshold(coefficients, epsilon);
 
 	% Quantization of real and complex parts
 	realPartCoefficients = real(coefficients);
@@ -20,8 +21,12 @@ function compress(sample, epsilon, L)
 
 	quantizationTable = [realQuantizationTable imaginaryQuantizationTable];
 
-	% Huffman encoding
-	compressedSize = huffmanEncoding(quantizationTable, L)/8
+	% Huffman encoding size approximate size
+	compressedSize = huffmanEncoding(quantizationTable, L)/8;
+
+	% Recover file from the quantified values
+	expandedCoefficients = addMissingFrequences(realQuantizationTable + imaginaryQuantizationTable*j);
+	recoveredFile = ifft(expandedCoefficients);
 end
 
 function coefficients = threshold(coefficients, epsilon)
@@ -32,7 +37,6 @@ function coefficients = threshold(coefficients, epsilon)
 	end
 end
 
-% coefficientsTable are the real and imaginary parts of the coefficients divided in two columns respectively
 % quantizationTable are the real and imaginary parts of the quantized coefficients
 function quantizationTable = quantize(coefficients, L)
 	% Get the (min max) bounds of the coefficients
@@ -79,8 +83,13 @@ function compressedSize = calculateCompressedSize(uniqueCoefficients, coefficien
 	end
 end
 
-
-
+function coefficients = addMissingFrequences(coefficients)
+    n = length(coefficients);
+    n = 2 * (n-1);
+    for i = 1:(n/2)
+        coefficients(n - i) = conj(coefficients(i));
+    end
+end
 
 % Calculate the step in the Quantization process
 % The bounds are assumed to be recieved in the order: min and max
