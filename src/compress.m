@@ -9,11 +9,10 @@ function compress(sample, epsilon, L)
 	% because they are repeated.
 	uniqueCoefficients = unique(coefficients); % octave's fft returns unique values
 
-	% Threshold and quantization
+	% Threshold
 	uniqueCoefficients = threshold(coefficients, epsilon);
 
-	% Coefficients in their real part and complex part
-	% so the minimum and maximum values can be calculated
+	% Quantization of real and complex parts
 	realPartCoefficients = real(coefficients);
 	imaginaryPartCoefficients = imag(coefficients);
 	realQuantizationTable = quantize(realPartCoefficients, L);
@@ -22,8 +21,7 @@ function compress(sample, epsilon, L)
 	quantizationTable = [realQuantizationTable imaginaryQuantizationTable];
 
 	% Huffman encoding
-	huffmanEncoding([real(coefficients) imag(coefficients)], L);
-	compressedSize = huffmanEncoding(quantizationTable, L)
+	compressedSize = huffmanEncoding(quantizationTable, L)/8
 end
 
 function coefficients = threshold(coefficients, epsilon)
@@ -59,10 +57,10 @@ function compressedSize = huffmanEncoding(coefficients, L)
 
 	% Calculate the size of the compressed file (we don't need the file to
 	% determine its size)
-	compressedSize = calculateCompressedSize(uniqueCoefficients, coeffRelativeFrequency, sampleDictionary, L);
+	compressedSize = calculateCompressedSize(uniqueCoefficients, coefficientsFrequency, sampleDictionary, L);
 end
 
-function compressedSize = calculateCompressedSize(uniqueCoefficients, coeffRelativeFrequency, sampleDictionary, L)
+function compressedSize = calculateCompressedSize(uniqueCoefficients, coefficientsFrequency, sampleDictionary, L)
 	coefficientsNumber = length(uniqueCoefficients);
 	compressedSize = L * coefficientsNumber;
 
@@ -77,7 +75,7 @@ function compressedSize = calculateCompressedSize(uniqueCoefficients, coeffRelat
 	compressedSize += 8;
 
 	for i=1:coefficientsNumber
-		compressedSize += coeffRelativeFrequency(i) * length(sampleDictionary{i});
+		compressedSize += coefficientsFrequency(i) * length(sampleDictionary{i});
 	end
 end
 
