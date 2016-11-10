@@ -11,7 +11,7 @@ function compress(sample, epsilon, L)
 
 	% Threshold and quantization
 	uniqueCoefficients = threshold(coefficients, epsilon);
-	quantizationTable = quantize(uniqueCoefficients, L);
+	[coefficientsTable quantizationTable] = quantize(uniqueCoefficients, L);
 
 	% Huffman encoding
 	compressedSize = huffmanEncoding(coefficients, uniqueCoefficients, quantizationTable, L)
@@ -43,28 +43,28 @@ function [coefficientsTable quantizationTable] = quantize(coefficients, L)
 	imaginaryStep = calculateStep(imaginaryBounds, L);
 
 	realQuantizationTable = [realBounds(1):realStep:realBounds(2)];
-	imaginaryQuantizationTable = [realBounds(1):imaginaryStep:realBounds(2)];
+	imaginaryQuantizationTable = [imaginaryBounds(1):imaginaryStep:imaginaryBounds(2)];
 
 	coefficientsTable = [realPartCoefficients imaginaryPartCoefficients];
 	quantizationTable = [realQuantizationTable imaginaryQuantizationTable];
 end
 
-function compressedSize = huffmanEncoding(coefficients, uniqueCoefficients, quantizationTable, L)
+function compressedSize = huffmanEncoding(quantizationTable, L)
 	uniqueCoefficients = unique(quantizationTable);
 
 	% Calculate the coefficients probability of occurrence in the sample
 	coefficientsFrequency = hist(quantizationTable, uniqueCoefficients);
 	totalFrequency = sum(coefficientsFrequency);
-	coefficientsProbability = coefficientsFrequency/totalFrequency
+	coeffRelativeFrequency = coefficientsFrequency/totalFrequency;
 
-	sampleDictionary = huffmandict(quantizationTable, coefficientsProbability);
+	sampleDictionary = huffmandict(quantizationTable, coeffRelativeFrequency);
 
 	% Calculate the size of the compressed file (we don't need the file to
 	% determine its size)
-	compressedSize = calculateCompressedSize(uniqueCoefficients, coefficientsProbability, sampleDictionary, L);
+	compressedSize = calculateCompressedSize(uniqueCoefficients, coeffRelativeFrequency, sampleDictionary, L);
 end
 
-function compressedSize = calculateCompressedSize(uniqueCoefficients, coefficientsProbability, sampleDictionary, L)
+function compressedSize = calculateCompressedSize(uniqueCoefficients, coeffRelativeFrequency, sampleDictionary, L)
 	coefficientsNumber = length(uniqueCoefficients);
 	compressedSize = L * coefficientsNumber;
 
@@ -79,7 +79,7 @@ function compressedSize = calculateCompressedSize(uniqueCoefficients, coefficien
 	compressedSize += 8;
 
 	for i=1:coefficientsNumber
-		compressedSize += coefficientsProbability(i) * length(sampleDictionary{i});
+		compressedSize += coeffRelativeFrequency(i) * length(sampleDictionary{i});
 	end
 end
 
