@@ -1,4 +1,4 @@
-function sample = readSample(sampleNumber, sampleType = "")
+function [sample,filesize] = readSample(sampleNumber, sampleType = "")
 	persistent sampleFolder = "../samples/";
 	persistent sampleName = "sample";
 	persistent sampleFormat = ".wav";
@@ -7,4 +7,5 @@ function sample = readSample(sampleNumber, sampleType = "")
 	samplePath = [sampleFolder sampleName sampleNumber sampleType sampleFormat];
 
 	sample = wavread(samplePath);
+  filesize = lstat(samplePath).size;
 end

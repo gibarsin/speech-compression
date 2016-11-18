@@ -1,7 +1,7 @@
 % sample is the file to compress
 % epsilon is the upper bound from which the numbers below will be truncated to zero
 % L is the number of bits used in the 'quantization process'
-function recoveredFile = compress(sample, epsilon, L)
+function [recoveredFile,compressedSize] = compress(sample, epsilon, L)
 	% Transform methods
 	coefficients = fft(sample); % Return FFT coefficients, function is from Octave
 
@@ -9,6 +9,8 @@ function recoveredFile = compress(sample, epsilon, L)
 	% because they are repeated.
 	N = length(coefficients);
 	coefficients = coefficients(1:floor(N/2) + 1);
+  
+  minCoefficient = min(abs(coefficients))
 
 	% Threshold values below epsilon
 	coefficients = threshold(coefficients, epsilon);
@@ -22,7 +24,7 @@ function recoveredFile = compress(sample, epsilon, L)
 	quantizationTable = [realQuantizationTable imaginaryQuantizationTable];
 
 	% Huffman encoding size approximate size
-	compressedSize = huffmanEncoding(quantizationTable, L)/8
+	compressedSize = huffmanEncoding(quantizationTable, L)/8;
 
 	% Recover file from the quantified values
 	expandedCoefficients = addMissingFrequences(realQuantizationTable + imaginaryQuantizationTable*j);
