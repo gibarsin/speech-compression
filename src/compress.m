@@ -1,7 +1,7 @@
 % sample is the file to compress
 % epsilon is the upper bound from which the numbers below will be truncated to zero
 % L is the number of bits used in the 'quantization process'
-function recoveredFile = compress(sample, epsilon, L)
+function [recoveredFile,compressedSize] = compress(sample, epsilon, L)
 	% Transform methods
 	coefficients = fft(sample); % Return FFT coefficients, function is from Octave
 
@@ -16,8 +16,6 @@ function recoveredFile = compress(sample, epsilon, L)
 	% Quantization of real and complex parts
 	realPartCoefficients = real(coefficients);
 	imaginaryPartCoefficients = imag(coefficients);
-	%realQuantizationTable = quantize(realPartCoefficients, L);
-	%imaginaryQuantizationTable = quantize(imaginaryPartCoefficients, L);
 	realQuantizationTable = quantize(realPartCoefficients, L);
 	imaginaryQuantizationTable = quantize(imaginaryPartCoefficients, L);
 
@@ -28,7 +26,7 @@ function recoveredFile = compress(sample, epsilon, L)
 
 	% Recover file from the quantified values
 	expandedCoefficients = addMissingFrequences(realQuantizationTable + imaginaryQuantizationTable*j);
-	recoveredFile = ifft(expandedCoefficients);
+	recoveredFile = real(ifft(expandedCoefficients));
 end
 
 function coefficients = threshold(coefficients, epsilon)
@@ -48,42 +46,6 @@ function quantizationTable = quantize(coefficients, L)
 	% Get the step to build the quantization table
 	step = calculateStep(minFrequency, maxFrequency+1e-4, L);
 	quantizationIndex =  floor((coefficients - minFrequency) / step);
-	quantizationTable = quantizationIndex * step + step/2 + minFrequency;
-end
-
-% quantizationTable are the real and imaginary parts of the quantized coefficients
-function quantizationTable = quantize2(coefficients, L)
-	% Get the (min max) bounds of the coefficients
-	minFrequency = min(coefficients);
-	maxFrequency = max(coefficients);
-
-	buckets = 0;
-	for i=1:L
-		if mod(i,2) == 0
-			buckets*=2;
-		end
-		buckets+=1;
-	end
-	
-	curr = 0;
-	smallStep = 2**(floor(L/2));
-	step = calculateStep(minFrequency, maxFrequency, buckets);
-	quantizationIndex =  floor((coefficients - minFrequency) / step);
-	quantizationTable = zeros(length(coefficients));
-	for i=1:length(quantizationIndex)
-		index = quantizationIndex(i);
-		while(curr<index)
-			curr += smallStep;
-			if(curr < step/2)
-				smallStep/=2;
-			else
-				smallStep*=2;
-			end
-		end
-		quantizationTable(i) = minFrequency + step * curr + step * smallStep/2;
-	end
-	
-			
 	quantizationTable = quantizationIndex * step + step/2 + minFrequency;
 end
 
