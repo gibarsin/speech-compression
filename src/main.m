@@ -4,7 +4,7 @@
 function main(epsilon, L, totalSamples)
 	for i = 1:totalSamples
 		sample = readSample(i);
-		recoveredFile = compress(sample, epsilon, L);
+		recoveredFile = compress(sample, epsilon, 2**L);
 		writeSample = writeSample(recoveredFile, "_recovered", i);
 	end
 end
