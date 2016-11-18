@@ -22,7 +22,7 @@ function recoveredFile = compress(sample, epsilon, L)
 	quantizationTable = [realQuantizationTable imaginaryQuantizationTable];
 
 	% Huffman encoding size approximate size
-	compressedSize = huffmanEncoding(quantizationTable, L)/8;
+	compressedSize = huffmanEncoding(quantizationTable, L)/8
 
 	% Recover file from the quantified values
 	expandedCoefficients = addMissingFrequences(realQuantizationTable + imaginaryQuantizationTable*j);
@@ -85,7 +85,7 @@ end
 
 function coefficients = addMissingFrequences(coefficients)
     n = length(coefficients);
-    n = 2 * (n-1);
+    n = 2 * (n);
     for i = 1:(n/2)
         coefficients(n - i) = conj(coefficients(i));
     end
