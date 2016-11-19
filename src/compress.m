@@ -49,6 +49,9 @@ function quantizationTable = quantize(coefficients, L)
 	quantizationTable = quantizationIndex * step + step/2 + minFrequency;
 end
 
+
+
+
 function compressedSize = huffmanEncoding(coefficients, L)
 	uniqueCoefficients = unique(coefficients);
 
