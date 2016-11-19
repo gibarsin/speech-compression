@@ -16,8 +16,8 @@ function [recoveredFile,compressedSize] = compress(sample, epsilon, L)
 	% Quantization of real and complex parts
 	realPartCoefficients = real(coefficients);
 	imaginaryPartCoefficients = imag(coefficients);
-	realQuantizationTable = quantize(realPartCoefficients, L);
-	imaginaryQuantizationTable = quantize(imaginaryPartCoefficients, L);
+	realQuantizationTable = quantize(realPartCoefficients, 2**L);
+	imaginaryQuantizationTable = quantize(imaginaryPartCoefficients, 2**L);
 
 	quantizationTable = [realQuantizationTable imaginaryQuantizationTable];
 
@@ -38,13 +38,13 @@ function coefficients = threshold(coefficients, epsilon)
 end
 
 % quantizationTable are the real and imaginary parts of the quantized coefficients
-function quantizationTable = quantize(coefficients, L)
+function quantizationTable = quantize(coefficients, buckets)
 	% Get the (min max) bounds of the coefficients
 	minFrequency = min(coefficients);
 	maxFrequency = max(coefficients);
 
 	% Get the step to build the quantization table
-	step = calculateStep(minFrequency, maxFrequency+1e-4, L);
+	step = calculateStep(minFrequency, maxFrequency+1e-4, buckets);
 	quantizationIndex =  floor((coefficients - minFrequency) / step);
 	quantizationTable = quantizationIndex * step + step/2 + minFrequency;
 end
